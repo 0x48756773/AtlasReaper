@@ -31,27 +31,61 @@ namespace AtlasReaper.Jira
                 {
                     url = url + ",attachment";
                 }
-                if (!options.All)
+                if (options.All)
                 {
-                    issuesList = DoSearch(options, url);
-                }
-                else 
-                {
-                    // return all results
-                }
+                    url = url + "&maxResults=100";
+                    int startAt = 0;
+                    List<Issue> allIssues = new List<Issue>();
+                    RootIssuesObject page = DoSearch(options, url);
 
-                PrintIssues(issuesList.Issues, Console.Out);
-
-                if (options.outfile != null)
-                {
-                    using (StreamWriter writer = new StreamWriter(options.outfile))
+                    if (page == null || page.Issues == null)
                     {
-                        PrintIssues(issuesList.Issues, writer);
+                        Console.WriteLine("Error: No results returned from search.");
+                        return;
+                    }
+
+                    allIssues.AddRange(page.Issues);
+                    while (allIssues.Count < page.Total)
+                    {
+                        startAt += 100;
+                        RootIssuesObject nextPage = DoSearch(options, url + "&startAt=" + startAt);
+                        if (nextPage?.Issues == null) break;
+                        allIssues.AddRange(nextPage.Issues);
+                    }
+
+                    if (options.outfile != null)
+                    {
+                        using (StreamWriter writer = new StreamWriter(options.outfile))
+                        {
+                            PrintIssues(allIssues, writer);
+                        }
+                    }
+                    else
+                    {
+                        PrintIssues(allIssues, Console.Out);
                     }
                 }
                 else
                 {
-                    PrintIssues(issuesList.Issues, Console.Out);
+                    issuesList = DoSearch(options, url);
+
+                    if (issuesList == null || issuesList.Issues == null)
+                    {
+                        Console.WriteLine("Error: No results returned from search.");
+                        return;
+                    }
+
+                    if (options.outfile != null)
+                    {
+                        using (StreamWriter writer = new StreamWriter(options.outfile))
+                        {
+                            PrintIssues(issuesList.Issues, writer);
+                        }
+                    }
+                    else
+                    {
+                        PrintIssues(issuesList.Issues, Console.Out);
+                    }
                 }
 
             }
@@ -78,6 +112,7 @@ namespace AtlasReaper.Jira
         {
             try
             {
+                if (issues == null) return;
                 for (int i = 0; i < issues.Count; i++)
                 {
                     Issue issue = issues[i];
