@@ -119,7 +119,7 @@ namespace AtlasReaper.Jira
             IssueCreated issueCreated = webRequestHandler.PostJson<IssueCreated>(postIssueUrl, options.Cookie, json);
             Console.WriteLine("Created issue : " + issueCreated.Key);
 
-            string restUrl = options.Url +  "/rest/api/3/search?jql=Issue=" + issueCreated.Key + "&expand=renderedFields&fields=description,summary,created,updated,status,creator,assignee,comment,attachment";
+            string restUrl = options.Url + "/rest/api/3/search/jql?jql=Issue=" + issueCreated.Key + "&expand=renderedFields&fields=description,summary,created,updated,status,creator,assignee,comment,attachment";
             
             Issues issueClass = new Issues();
             RootIssuesObject issuesList = issueClass.GetIssues(restUrl, options.Cookie);

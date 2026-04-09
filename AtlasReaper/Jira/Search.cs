@@ -17,10 +17,10 @@ namespace AtlasReaper.Jira
 
                 // Building the url
                 string query = WebUtility.UrlEncode(options.Query);
-                string url = 
-                    options.Url + 
-                    "/rest/api/3/search?jql=text~" + 
-                    query + 
+                string url =
+                    options.Url +
+                    "/rest/api/3/search/jql?jql=text~" +
+                    query +
                     "&expand=renderedFields&fields=description,summary,created,updated,status,creator,assignee";
 
                 if (options.Comments)
@@ -81,18 +81,19 @@ namespace AtlasReaper.Jira
                 for (int i = 0; i < issues.Count; i++)
                 {
                     Issue issue = issues[i];
-                    List<Comment> comments = issue.RenderedFields.RenderedCommentObj?.Comments;
+                    List<Comment> comments = issue.RenderedFields?.RenderedCommentObj?.Comments;
                     List<Attachment> attachments = issue.RenderedFields?.Attachments;
 
-                    writer.WriteLine("  Issue Title    : " + issue.Fields.Title);
+                    writer.WriteLine("  Issue Title    : " + issue.Fields?.Title);
                     writer.WriteLine("  Issue Key      : " + issue.Key);
                     writer.WriteLine("  Issue Id       : " + issue.Id);
-                    writer.WriteLine("  Created        : " + issue.RenderedFields.Created);
-                    writer.WriteLine("  Updated        : " + issue.RenderedFields.Updated);
-                    writer.WriteLine("  Status         : " + issue.Fields.Status?.Name);
-                    writer.WriteLine("  Creator        : " + issue.Fields.Creator?.EmailAddress + " - " + issue.Fields.Creator?.DisplayName + " - " + issue.Fields.Creator?.TimeZone);
-                    writer.WriteLine("  Assignee       : " + issue.Fields.Assignee?.EmailAddress + " - " + issue.Fields.Assignee?.DisplayName + " - " + issue.Fields.Assignee?.TimeZone);
-                    writer.WriteLine("  Issue Contents : " + Regex.Replace(issue.RenderedFields.Description, @"<(?!\/?a(?=>|\s.*>))\/?.*?>", "").Trim('\r', '\n'));
+                    writer.WriteLine("  Created        : " + issue.RenderedFields?.Created);
+                    writer.WriteLine("  Updated        : " + issue.RenderedFields?.Updated);
+                    writer.WriteLine("  Status         : " + issue.Fields?.Status?.Name);
+                    writer.WriteLine("  Creator        : " + issue.Fields?.Creator?.EmailAddress + " - " + issue.Fields?.Creator?.DisplayName + " - " + issue.Fields?.Creator?.TimeZone);
+                    writer.WriteLine("  Assignee       : " + issue.Fields?.Assignee?.EmailAddress + " - " + issue.Fields?.Assignee?.DisplayName + " - " + issue.Fields?.Assignee?.TimeZone);
+                    string description = issue.RenderedFields?.Description;
+                    writer.WriteLine("  Issue Contents : " + (description != null ? Regex.Replace(description, @"<(?!\/?a(?=>|\s.*>))\/?.*?>", "").Trim('\r', '\n') : ""));
                     writer.WriteLine();
                     if (attachments?.Count > 0)
                     {
@@ -115,9 +116,9 @@ namespace AtlasReaper.Jira
                         writer.WriteLine();
                         for (int j = 0; j < comments.Count; j++)
                         {
-                            writer.WriteLine("    - " + comments[j].Author.EmailAddress + " - " + comments[j].Author.DisplayName + " - " + comments[j].Created);
-                            List<Content> contentList = comments[j]?.Body.ContentList;
-                            for (int k = 0; k < contentList.Count; k++)
+                            writer.WriteLine("    - " + comments[j]?.Author?.EmailAddress + " - " + comments[j]?.Author?.DisplayName + " - " + comments[j]?.Created);
+                            List<Content> contentList = comments[j]?.Body?.ContentList;
+                            for (int k = 0; k < contentList?.Count; k++)
                             {
 
                                 List<CommentContent> commentContents = contentList[k]?.CommentContents;

@@ -14,7 +14,7 @@ namespace AtlasReaper.Jira
             try
             {
                 // Building the url
-                string restUrl = "/rest/api/3/search?jql=";
+                string restUrl = "/rest/api/3/search/jql?jql=";
                 string url = options.Url + restUrl;
                 if (options.Project != null)
                 {
@@ -83,6 +83,12 @@ namespace AtlasReaper.Jira
 
                     RootIssuesObject issuesList = GetIssues(url, options.Cookie);
 
+                    if (issuesList == null || issuesList.Issues == null)
+                    {
+                        Console.WriteLine("Error: No issues returned. The API request may have failed or the project has no issues.");
+                        return;
+                    }
+
                     if (options.outfile != null)
                     {
                         using (StreamWriter writer = new StreamWriter(options.outfile))
@@ -108,9 +114,7 @@ namespace AtlasReaper.Jira
             try
             {
                 Utils.WebRequestHandler webRequestHandler = new Utils.WebRequestHandler();
-
                 RootIssuesObject issuesList = webRequestHandler.GetJson<RootIssuesObject>(url, cookie);
-
                 return issuesList;
             }
             catch (Exception ex)
@@ -124,22 +128,25 @@ namespace AtlasReaper.Jira
         {
             try
             {
+                if (issues == null) return;
                 for (int i = 0; i < issues.Count; i++)
                 {
                     Issue issue = issues[i];
-                    List<Comment> comments = issue.RenderedFields.RenderedCommentObj?.Comments;
+                    List<Comment> comments = issue.RenderedFields?.RenderedCommentObj?.Comments;
                     List<Attachment> attachments = issue.RenderedFields?.Attachments;
 
-                    writer.WriteLine("  Issue Title    : " + issue.Fields.Title);
+                    writer.WriteLine("  Issue Title    : " + issue.Fields?.Title);
                     writer.WriteLine("  Issue Key      : " + issue.Key);
                     writer.WriteLine("  Issue Id       : " + issue.Id);
-                    writer.WriteLine("  Created        : " + issue.RenderedFields.Created);
-                    writer.WriteLine("  Updated        : " + issue.RenderedFields.Updated);
-                    writer.WriteLine("  Status         : " + issue.Fields.Status?.Name);
-                    writer.WriteLine("  Creator        : " + issue.Fields.Creator?.EmailAddress + " - " + issue.Fields.Creator?.DisplayName + " - " + issue.Fields.Creator?.TimeZone);
-                    writer.WriteLine("  Assignee       : " + issue.Fields.Assignee?.EmailAddress + " - " + issue.Fields.Assignee?.DisplayName + " - " + issue.Fields.Assignee?.TimeZone);
-                    writer.WriteLine("  Issue Contents : " + Regex.Replace(issue.RenderedFields.Description, @"<(?!\/?a(?=>|\s.*>))\/?.*?>", "").Trim('\r', '\n'));
+                    writer.WriteLine("  Created        : " + issue.RenderedFields?.Created);
+                    writer.WriteLine("  Updated        : " + issue.RenderedFields?.Updated);
+                    writer.WriteLine("  Status         : " + issue.Fields?.Status?.Name);
+                    writer.WriteLine("  Creator        : " + issue.Fields?.Creator?.EmailAddress + " - " + issue.Fields?.Creator?.DisplayName + " - " + issue.Fields?.Creator?.TimeZone);
+                    writer.WriteLine("  Assignee       : " + issue.Fields?.Assignee?.EmailAddress + " - " + issue.Fields?.Assignee?.DisplayName + " - " + issue.Fields?.Assignee?.TimeZone);
+                    string description = issue.RenderedFields?.Description;
+                    writer.WriteLine("  Issue Contents : " + (description != null ? Regex.Replace(description, @"<(?!\/?a(?=>|\s.*>))\/?.*?>", "").Trim('\r', '\n') : ""));
                     writer.WriteLine();
+
                     if (attachments?.Count > 0)
                     {
                         writer.WriteLine("  Attachments    : ");
@@ -154,6 +161,7 @@ namespace AtlasReaper.Jira
                             writer.WriteLine();
                         }
                     }
+
                     if (comments?.Count > 0)
                     {
                         writer.WriteLine();
@@ -161,31 +169,30 @@ namespace AtlasReaper.Jira
                         writer.WriteLine();
                         for (int j = 0; j < comments.Count; j++)
                         {
-                            writer.WriteLine("    - " + comments[j].Author.EmailAddress + " - " + comments[j].Author.DisplayName + " - " + comments[j].Created);
-                            List<Content> contentList = comments[j]?.Body.ContentList;
-                            for (int k = 0; k < contentList.Count; k++)
+                            writer.WriteLine("    - " + comments[j]?.Author?.EmailAddress + " - " + comments[j]?.Author?.DisplayName + " - " + comments[j]?.Created);
+                            List<Content> contentList = comments[j]?.Body?.ContentList;
+                            for (int k = 0; k < contentList?.Count; k++)
                             {
-
                                 List<CommentContent> commentContents = contentList[k]?.CommentContents;
                                 if (commentContents != null)
                                 {
                                     for (int l = 0; l < commentContents.Count; l++)
                                     {
                                         writer.WriteLine("             " + commentContents[l].Text?.Trim('\r', '\n'));
-
                                     }
                                 }
                             }
                             writer.WriteLine();
                         }
-
                     }
                     writer.WriteLine();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error occurred while printing issues: " + ex.Message);
+                Console.WriteLine($"Error occurred while printing issues: {ex.Message}");
+                Console.WriteLine($"[DEBUG] Failed at issue '{debugIssueKey}', step '{debugStep}'");
+                Console.WriteLine($"[DEBUG] Stack trace: {ex.StackTrace}");
             }
 
         }
