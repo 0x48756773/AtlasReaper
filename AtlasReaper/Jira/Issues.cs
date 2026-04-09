@@ -190,9 +190,7 @@ namespace AtlasReaper.Jira
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error occurred while printing issues: {ex.Message}");
-                Console.WriteLine($"[DEBUG] Failed at issue '{debugIssueKey}', step '{debugStep}'");
-                Console.WriteLine($"[DEBUG] Stack trace: {ex.StackTrace}");
+                Console.WriteLine("Error occurred while printing issues: " + ex.Message);
             }
 
         }
